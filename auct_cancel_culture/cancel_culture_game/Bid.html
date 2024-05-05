@@ -1,0 +1,859 @@
+{{ block content }}
+
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<link href="https://unpkg.com/tabulator-tables@5.4.0/dist/css/tabulator_simple.min.css" rel="stylesheet">
+<script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.4.0/dist/js/tabulator.min.js"></script>
+
+<style>
+.otree-title {
+  display: none;
+}
+.otree-body {
+  max-width: 100%;
+}
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+th, td {
+  padding: 2px;
+  padding-left: 5px;
+  padding-right: 5px;
+  text-align: center;    
+}
+.bid {
+  background-color: #C6EFCE;
+  color: #006100;
+  border: 1px solid Grey;
+  font-size: 10px;
+}
+.ask {
+  background-color: #FFC7CE;
+  color: #AD0006;
+  border: 1px solid Grey;
+  font-size: 10px;
+}
+.price {
+  background-color: #FFFFCC;
+  color: #595959;
+  border: 1px solid Grey;
+  font-size: 10px;
+}
+.orderbook {
+  line-height: 0.8;
+  height: 24px;
+}
+.row {
+width: 100%;
+flex-wrap: nowrap;
+}
+.column {
+  position: relative;
+  float: left;
+  width: 50%;
+  padding: 15px;
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+
+.left {
+  width: 15%;
+}
+
+.right {
+  width: 60%;
+}
+.trades {
+  width: 25%;
+}
+
+.trades tbody {
+    display:block;
+    max-height:50px;
+    overflow-y:scroll;
+}
+.trades thead, .trades tbody tr {
+    display:table;
+    width:100%;
+}
+.trds_period_col {
+    width: 20%
+}
+.trds_time_col {
+    width: 20%
+}
+.trds_instr_col {
+    width: 20%
+}
+.trds_price_col {
+    width: 20%
+}
+.trds_qnt_col {
+    width: 20%
+}
+</style>
+
+<div id="row_wrapper" class="row"  style="top: 5px; left:0; right:0; bottom: 360px; height: calc(100vh - 375px);">
+    <div id="inner1" class="column left">
+<div>
+<table>
+    {{ for cashcur in currencies }}
+<tr><th>{{ cashcur.name }}:</th><td id="msg-mon_{{ cashcur.id }}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br></td></tr>
+    {{ endfor }}
+<tr><th>Rate:</th><td id="msg-rate"> &nbsp;&nbsp;&nbsp;&nbsp;</td></tr>
+<tr><td id="game_status" colspan="2">&nbsp;</td></tr>
+<tr><th>Period</th><td id="period_val">&nbsp;|&nbsp;</td></tr>
+<tr><th>Left time</th><td id="time_val">&nbsp;&nbsp;&nbsp;</td></tr>
+<tr><th>Case name</th><td id="case_name_val">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td></tr>
+</table>
+<p id="message">&nbsp;</p>
+
+{{ if player.isAdmin }}
+<div>
+    <button type="button" id="start_pause" onclick="f_start_pause()">Start</button>
+    <button type="button" id="next_stage" onclick="f_next_stage()">Next Period</button>
+</div>
+{{ endif }}
+</div>
+</div>
+
+<div id="inner2" class="column right">
+
+<table>
+         <tr>
+            <th>Name</th>
+            <th>Position</th>
+            <th id='payoff_nm'></th>
+            <th>Price</th>
+            <th>Volume</th>
+            <th></th>
+            <th>Bid</th>
+            <th>Price</th>
+            <th>Ask</th>
+            <th>Cancel</th>
+            <th>Last Price</th>
+         </tr>
+        {{ for instr in instrums }}
+    <tbody id = "i{{ instr.id }}_span">
+         <tr>
+            <td rowspan = "2" id = "i{{ instr.id }}_name" onclick="selectView(1, '{{ instr.id }}')" oncontextmenu="selectView(2, '{{ instr.id }}');return false;">{{ instr.name }}</td>
+            <td rowspan = "2" id = "i{{ instr.id }}_pos"></td>
+            <td rowspan = "2">
+                <span id="i{{ instr.id }}_btn_span">
+				<button type="button" id="i{{ instr.id }}_btn-buy" onclick="sendBuySell('bid', '{{ instr.id }}')">Buy</button>
+				<button type="button" id="i{{ instr.id }}_btn-sell" onclick="sendBuySell('ask', '{{ instr.id }}')">Sell</button>
+                </span>
+                <span id="i{{ instr.id }}_res_span"></span>
+			</td>
+            <td rowspan = "2"><input type="number" lang="en" id="i{{ instr.id }}_q_price" name="i{{ instr.id }}_q_price" style="-moz-appearance: auto;" min="0" max="10000" step="0.01" size = "6"></td>
+            <td rowspan = "2"><input type="number" id="i{{ instr.id }}_q_qnt" name="i{{ instr.id }}_q_qnt" style="-moz-appearance: auto;" min="1" max="1000" step="1" size = "6"></td>
+            <td rowspan = "2" id="i{{ instr.id }}_btn_bid_span">
+				<button type="button" id="i{{ instr.id }}_btn-bid" onclick="sendBidAsk('bid', '{{ instr.id }}')">Bid</button>
+				<button type="button" id="i{{ instr.id }}_btn-ask" onclick="sendBidAsk('ask', '{{ instr.id }}')">Ask</button>
+			</td>
+            <td id = "i{{ instr.id }}_bid_1"></td>
+            <td id = "i{{ instr.id }}_price_1" class = "price">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+            <td id = "i{{ instr.id }}_ask_1" class = "ask">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+            <td rowspan="2" id="i{{ instr.id }}_btn_cancel_span">
+				<button type="button" id="i1_btn-cancel-bids" onclick="cancelBidAsk('bid', '{{ instr.id }}')"><s>Bids</s></button>
+				<button type="button" id="i1_btn-cancel-asks" onclick="cancelBidAsk('ask', '{{ instr.id }}')"><s>Asks</s></button>
+            </td>
+            <th rowspan = "2" id = "i{{ instr.id }}_last_price">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+         </tr>
+         <tr>
+            <td id = "i{{ instr.id }}_bid_2" class = "bid">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+            <td id = "i{{ instr.id }}_price_2" class = "price">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+            <td id = "i{{ instr.id }}_ask_2"></td>
+         </tr>
+
+        {{ endfor }}
+    </tbody>
+</table>
+</div>
+<div id="inner3" class="column trades">
+    <div id="tab3_switch_buttons" style="position: absolute; top: 5px; height: 30px; left: 50%; transform: translateX(-50%);">
+        <button type="button" id="tab3_sel1" onclick="selectDealTab(1)">Deals</button>
+  <!--      <button type="button" id="tab3_sel2" onclick="selectDealTab(2)">Support</button> -->
+        <button type="button" id="tab3_sel3" onclick="selectDealTab(3)">Messages</button>
+    </div>
+    <div id="container_score"  style="position: absolute; top: 40px; left: 20px; bottom: 0px; right: 20px; overflow: hidden;"></div>
+    <div id="container_deals"  style="position: absolute; top: 40px; left: 20px; bottom: 0px; right: 20px; overflow: hidden;"></div>
+    <div id="container_messages"  style="position: absolute; top: 40px; left: 20px; bottom: 0px; right: 20px; overflow: hidden;"></div> 
+
+    <!--
+    <table style="width: 100%;">
+        <thead style="width: calc( 100% - 1em );">
+<tr>
+    <td class="trds_instr_col">Instr.</td>
+    <td class="trds_period_col">Period</td>
+    <td class="trds_time_col">Time</td>
+    <td class="trds_price_col">Price</td>
+    <td class="trds_qnt_col">Qnt.</td>
+</tr>
+        </thead>
+        <tbody id="trades_body">
+
+        </tbody>
+    </table> -->
+</div>
+</div>
+
+<div id="row_wrapper2" class="row" >
+<div id="inner21" class="column" style="height: 350px;">
+
+<table style="position: absolute; top: 20px; left:20px; width:150px;">
+<tr>
+    <th>Bid</th>
+    <th>Price</th>
+    <th>Ask</th>
+</tr>
+{{ for i in asks_range }}
+<tr>
+    <td ></td>
+    <td id="ask_1_{{ i }}_price" class="price">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+    <td id="ask_1_{{ i }}_vol" class="ask orderbook">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+</tr>
+{{ endfor }}
+{{ for i in bids_range }}
+<tr>
+    <td id="bid_1_{{ i }}_vol" class="bid orderbook">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+    <td id="bid_1_{{ i }}_price" class="price">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+    <td ></td>
+</tr>
+{{ endfor }}
+</table>
+<div id="container_1"  style="position: absolute; top: 30px; left: 180px; bottom: 0px; right: 20px; overflow: hidden;"></div>
+<select id="cont_name_1" style="position: absolute; top: 5px; left: 50%; transform: translateX(-50%);" onchange="onViewSwitch(1, this.value)" >
+{{ for instr in instrums }}
+    <option id="opt_1_i_{{instr.id}}" value={{instr.id}}>{{ instr.name }}</option>
+{{ endfor }}
+</select>
+</div>
+<div id="inner22" class="column" style="height: 350px;">
+<table style="position: absolute; top: 20px; left:20px; width:150px;">
+<tr>
+    <th>Bid</th>
+    <th>Price</th>
+    <th>Ask</th>
+</tr>
+{{ for i in asks_range }}
+<tr>
+    <td ></td>
+    <td id="ask_2_{{ i }}_price" class="price">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+    <td id="ask_2_{{ i }}_vol" class="ask orderbook">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+</tr>
+{{ endfor }}
+{{ for i in bids_range }}
+<tr>
+    <td id="bid_2_{{ i }}_vol" class="bid orderbook">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+    <td id="bid_2_{{ i }}_price" class="price">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+    <td ></td>
+</tr>
+{{ endfor }}
+</table>
+<div id="container_2"  style="position: absolute; top: 30px; left: 180px; bottom: 0px; right: 20px; overflow: hidden;"></div>
+<select id="cont_name_2" style="position: absolute; top: 5px; left: 50%; transform: translateX(-50%);" onchange="onViewSwitch(2, this.value)">
+{{ for instr in instrums }}
+    <option id="opt_2_i_{{instr.id}}" value={{instr.id}}>{{ instr.name }}</option>
+{{ endfor }}
+</select>
+</div>
+</div>
+
+<script>
+
+    let itmQuantity = document.getElementById('quantity');
+    let itmPrice = document.getElementById('price');
+    var period_id = -1;
+    var marketStatus = '';
+    var select_1 = 1;
+    var select_2 = 2;
+
+    var orderbooks = {};
+    var chartsData = {};
+    var playerTrades = [];
+    var playerOrders = {};
+    var instrumsPosOnly = [];
+    var instrumsForbid = [];
+    var curTime = 0
+    const chart_data_names = ['bid', 'ask', 'trade'];
+    for (var i = 0; i < js_vars.instrums; i++) {
+        instrumsPosOnly[i] = js_vars.instrums_pos_only[i];
+        instrumsForbid[i] = 0;
+    }
+    for (var i = 1; i < js_vars.instrums; i++) {
+        orderbooks[i.toString()] = {'bid': [], 'ask':[]};
+        chartsData[i.toString()] = {};
+        for (var j in chart_data_names) {
+            chartsData[i.toString()][chart_data_names[j]] = [];
+        }
+        playerOrders[i.toString()] = {};
+    }
+
+
+
+    function createChart(cont) {
+        return Highcharts.chart(cont, { chart: { animation: false },
+            title: {text: null},
+            credits: { enabled: false },
+            yAxis: { title: { text: null }},
+            xAxis: { max: js_vars.chart_length },
+            plotOptions: { series: {marker: { enabled: false }, animation: false } },
+            series: [{  type: 'scatter', lineWidth: 2, name: 'Bid', color: '#00b400', data: [] },
+                {  type: 'scatter', lineWidth: 2,  name: 'Ask', color: '#AD0006', data: [] },
+                {  type: 'scatter', lineWidth: 2,  name: 'Deals', color: '#595959', data: []}]
+        });
+    }
+
+    var scoreColors = ['#595959', '#00b400', '#AD0006', '#FF0000', '#E80C7A', '#E80C7A'];
+    function createScore(cont) {
+        return Highcharts.chart(cont, { chart: { animation: false },
+            title: {text: null},
+            legend:{ enabled:false },
+            credits: { enabled: false },
+            yAxis: { min:0, max: 10, title: { text: null }, tickInterval: 1},
+            xAxis: {
+                categories: js_vars.scenario_names,
+
+            },            
+            // colors: ['#FF530D', '#E82C0C', '#FF0000', '#E80C7A', '#E80C7A'],
+            // plotOptions: { series: {animation: false } },
+            series: [ {  type: 'column', name: 'Scores', color: '#595959', data: []}]
+        });
+    }    
+
+    var showResState = false;
+    var chart1 = createChart('container_1');
+    var chart2 = createChart('container_2');
+    var chart_score = createScore('container_score');
+    var trds_table = new Tabulator("#container_deals", {
+    data: [], layout:"fitDataStretch",
+    columns:[
+        {title:"Instr.", field:"instr", mutator: function (value) { return js_vars.instrums_names[value]; }, headerSort:false},
+        {title:"Period", field:"period", headerSort:false},
+        {title:"Time", field:"time", mutator: function(value) {return Math.ceil(value);}, headerSort:false},
+        {title:"Price", field:"p", headerSort:false},
+        {title:"Qnt.", field:"q", headerSort:false},
+    ],});
+    var msgs_table = new Tabulator("#container_messages", {
+    data: [], layout:"fitDataStretch",
+    columns:[
+        {title:"Time", field:"time", headerSort:false},
+        {title:"Msg", field:"msg", headerSort:false, formatter:"textarea"},
+    ],})
+    selectView(1, '1');
+    selectView(2, '2'); //todo add if
+    selectDealTab(1);
+
+    function selectDealTab(tabnum) {
+        if (tabnum == 1) {
+            document.getElementById('container_score').style.visibility = 'hidden';
+            document.getElementById('container_deals').style.visibility = 'visible';
+            document.getElementById('container_messages').style.visibility = 'hidden';
+        } 
+        if (tabnum == 2) {
+            document.getElementById('container_score').style.visibility = 'visible';
+            document.getElementById('container_deals').style.visibility = 'hidden';
+            document.getElementById('container_messages').style.visibility = 'hidden';
+        }
+        if (tabnum == 3) {
+            document.getElementById('container_score').style.visibility = 'hidden';
+            document.getElementById('container_deals').style.visibility = 'hidden';
+            document.getElementById('container_messages').style.visibility = 'visible';
+        }
+    }
+
+    function updateDict(dict, dfu) {
+        for (var i in dfu){
+            dict[i] = dfu[i];
+        }
+    }
+
+    function updateOrders(dct, dfu) {
+        for (var i in dfu){
+            dct[i] = {};
+            for (var j in dfu[i]) {
+                dct[i][dfu[i][j].p] = dfu[i][j].q + (dct[i][dfu[i][j].p] || 0)
+            }
+        }
+    }
+
+    function sendBidAsk(btn, inst) {
+        var c = ((btn === 'bid') ? 'bid' : 'ask');
+        console.log('sendBidAsk');
+
+        var price = Number(document.getElementById('i'+inst+'_q_price').value.replace(',','.'));
+        var qnt = Number(document.getElementById('i'+inst+'_q_qnt').value.replace(',','.'));
+        console.log(price);
+        if (!(price > 0)) {
+            publishMessage('Price must be positive');
+            return;
+        }
+        if (!(qnt > 0)) {
+            publishMessage('Quantity must be positive');
+            return;
+        }
+        if (!Number.isInteger(qnt)) {
+            publishMessage('Quantity must be integer');
+            return;
+        }
+        console.log(price);
+
+        price = Math.trunc((price+0.000001)*100)/100;
+        console.log(price.toPrecision(12));
+        console.log(price.toString());
+        document.getElementById('i'+inst+'_q_price').value = price.toString();
+        document.getElementById('i'+inst+'_q_qnt').value = qnt.toString();
+        liveSend({'type': 'order', 'period':period_id, 'instr': inst, 'ordertype':'limit', 'side': c, 'qnt': qnt, 'price': price.toFixed(2)});
+    }
+
+    function sendBuySell(btn, inst) {
+        var c = ((btn === 'bid') ? 'bid' : 'ask');
+        var qnt = Number(document.getElementById('i'+inst+'_q_qnt').value.replace(',','.'));
+        if (!(qnt > 0)) {
+            publishMessage('Quantity must be positive');
+            return;
+        }
+        if (!Number.isInteger(qnt)) {
+            publishMessage('Quantity must be integer');
+            return;
+        }
+        document.getElementById('i'+inst+'_q_qnt').value = qnt;
+        liveSend({'type': 'order', 'period':period_id, 'instr': inst, 'ordertype':'market', 'side': c, 'qnt': qnt, 'price': ''});
+    }
+
+    function cancelBidAsk(btn, inst) {
+        var c = ((btn === 'bid') ? 'bid' : 'ask');
+        liveSend({'type': 'cancelall', 'period':period_id, 'instr': inst, 'side': c});
+    }
+
+    function updateStreamData(saved_data, new_data, full) {
+        if (full) {
+            if (saved_data.length > new_data.length) {
+                saved_data.length = new_data.length;
+            }
+            for (var i = 0; i < new_data.length; i++) {
+              saved_data[i] = new_data[i];
+            }
+            return 0;
+        }
+        let last_el = saved_data.length;
+        if (new_data.length > 0) {
+            if (last_el < new_data[0][0]) {
+                //missed data
+                return -1;
+            }
+            for (var a in new_data) {
+                if (new_data[a][0] >= last_el) {
+                    saved_data[new_data[a][0]] = new_data[a][1];
+                }
+            }
+        }
+        return last_el;
+    }
+
+    function log_array_data(ch) {
+        var s = '';
+        for (var i = 0; i < ch.length; i++) {
+            s += '0: ' + ch[i][0] + ' 1: ' + ch[i][1] + ' - ';
+        }
+        console.log(s);
+    }
+
+
+    function log_chart_data(ch) {
+        var s = '';
+        for (var i = 0; i < ch.data.length; i++) {
+            s += 'x: ' + ch.data[i].x + ' y: ' + ch.data[i].y + ' - ';
+        }
+        console.log(s);
+    }
+
+    function updateChartViewData(i, instr, j, n, full) {
+        var cdata = [];
+        let s = chart_data_names[j];
+        let orig_data = chartsData[instr][s];
+        for (var k = n; k < orig_data.length-1; k++) {
+            cdata.push([orig_data[k][0], parseFloat(orig_data[k][1])]);
+            cdata.push([orig_data[k+1][0], parseFloat(orig_data[k][1])]);
+        }
+        if (orig_data.length > 0) {
+            cdata.push([orig_data[orig_data.length-1][0], parseFloat(orig_data[orig_data.length-1][1])]);
+            cdata.push([curTime, parseFloat(orig_data[orig_data.length-1][1])]);
+        }
+        let curchart = ((i === 1) ? chart1 : chart2);
+        if (n>0) {
+            if (cdata.length === 0) {return;}
+            log_chart_data(curchart.series[j]);
+            if (curchart.series[j].data.length > 0) {
+                curchart.series[j].data[curchart.series[j].data.length - 1].update({x: cdata[0][0]});
+            }
+            log_chart_data(curchart.series[j]);
+            for (var k = 0; k < cdata.length; k++) {
+                console.log(cdata[k]);
+                log_chart_data(curchart.series[j]);
+                curchart.series[j].addPoint(cdata[k]);
+            }
+            log_chart_data(curchart.series[j]);
+        } else {
+            console.log('full');
+            log_array_data(cdata);
+            log_chart_data(curchart.series[j]);
+            curchart.series[j].setData([])
+            if (curchart.series[j].data.length == cdata.length) {
+                curchart.series[j].setData(cdata, updatePoints = false);
+            } else {
+                curchart.series[j].setData(cdata);
+            }
+            log_chart_data(curchart.series[j]);
+        }
+    }
+
+    function updateChartData(instr, data, full) {
+        for (var j = 0; j < 3; j++) {
+            var s = chart_data_names[j];
+            var n = updateStreamData(chartsData[instr][s], data[s], full);
+            if (n < 0) {return true;}
+            if ((n === 0) || (n < chartsData[instr][s].length)) {
+                if (select_1 === instr) {
+                    updateChartViewData(1, instr, j, n, full);
+                }
+                if (select_2 === instr) {
+                    updateChartViewData(2, instr, j, n, full);
+                }
+            }
+        }
+    }
+
+    function updateProjectedScoreChart(player, full) {
+        if ('scorePr' in player) {
+            var cdata = [];
+            for (var j = 0; j < player.scorePr.length; j++) {
+                cdata.push({y:parseFloat(player.scorePr[j][0]), color: scoreColors[player.scorePr[j][1]]});
+            }
+            chart_score.series[0].setData(cdata)
+        }
+    }
+
+    function selectView(n, instr) {
+        document.getElementById('cont_name_'+n).value = instr;
+        onViewSwitch(n, instr);
+    }
+
+    function onViewSwitch(n, instr) {
+        if (n === 1) {
+            select_1 = instr;
+        } else if (n === 2) {
+            select_2 = instr;
+        }
+        updateChartViewData(n, instr, 0, 0, true);
+        updateChartViewData(n, instr, 1, 0, true);
+        updateChartViewData(n, instr, 2, 0, true);
+     //  orderbooks[instr] = orders;
+        updateOrderBookView(n,  orderbooks[instr], playerOrders[instr]);
+    }
+
+    function updateCurrentTime(timeleft) {
+        curTime = timeleft;
+        document.getElementById('time_val').innerText  = Math.ceil(timeleft);
+        for (var j = 0; j < 3; j++)
+        {
+            if (chart1.series[j].data.length > 0) {
+                chart1.series[j].data[chart1.series[j].data.length - 1].update({x: timeleft});
+            }
+            if (chart2.series[j].data.length > 0) {
+                chart2.series[j].data[chart2.series[j].data.length - 1].update({x: timeleft});
+            }
+        }
+
+    }
+
+    function updateOrderBook(instr, market, orders) {
+        orderbooks[instr] = {'bid': market.bid, 'ask':market.ask};
+        if (select_1 === instr) {
+            updateOrderBookView(1, market, orders);
+        }
+        if (select_2 === instr) {
+            updateOrderBookView(2, market, orders);
+        }
+
+    }
+
+    function updateOrderBookView(n, market, orders) {
+        var arrayLength = market.bid.length;
+        for (var j = 0; j < arrayLength; j++) {
+            document.getElementById('bid_'+n.toString()+'_'+j.toString() + '_price').innerText  = market.bid[j].p;
+            if (market.bid[j].p in orders) {
+                document.getElementById('bid_' + n.toString() + '_' + j.toString() + '_vol').innerHTML = market.bid[j].q +
+                                        '<br><span style="font-size:8px;">(' + orders[market.bid[j].p] + ')</span>';
+            } else {
+                document.getElementById('bid_' + n.toString() + '_' + j.toString() + '_vol').innerHTML = market.bid[j].q;
+            }
+        }
+        for (var j = arrayLength; j < 6; j++) {
+            document.getElementById('bid_'+n.toString()+'_'+j.toString() + '_price').innerText  = '\xa0\xa0\xa0\xa0\xa0\xa0';
+            document.getElementById('bid_'+n.toString()+'_'+j.toString() + '_vol').innerHTML  = '\xa0\xa0\xa0\xa0\xa0\xa0';
+        }
+        arrayLength = market.ask.length;
+        for (var j = 0; j < arrayLength; j++) {
+            document.getElementById('ask_'+n.toString()+'_'+j.toString() + '_price').innerText  = market.ask[j].p;
+            if (market.ask[j].p in orders) {
+                document.getElementById('ask_'+n.toString()+'_'+j.toString() + '_vol').innerHTML  = market.ask[j].q +
+                                        '<br><span style="font-size:8px;">(' + orders[market.ask[j].p] + ')</span>';
+            } else {
+                document.getElementById('ask_'+n.toString()+'_'+j.toString() + '_vol').innerHTML  = market.ask[j].q;
+            }
+        }
+        for (var j = arrayLength; j < 6; j++) {
+            document.getElementById('ask_'+n.toString()+'_'+j.toString() + '_price').innerText  = '\xa0\xa0\xa0\xa0\xa0\xa0';
+            document.getElementById('ask_'+n.toString()+'_'+j.toString() + '_vol').innerHTML  = '\xa0\xa0\xa0\xa0\xa0\xa0';
+        }
+        //todo orders
+    }
+
+    function updateMarket(instr, market, full) {
+        if ('active' in market) {
+            document.getElementById('i' + instr + '_span').style.visibility = ((market.active) ? 'visible' : 'hidden');
+            if (!market.active) {
+                document.getElementById('i' + instr + '_btn_span').style.visibility = 'hidden';
+                var select = document.getElementById('cont_name_1');
+                var option = document.getElementById('opt_1_i_' + instr);
+                if (option) {
+                    select.removeChild(option);
+                }
+                var select = document.getElementById('cont_name_2');
+                var option = document.getElementById('opt_2_i_' + instr);
+                if (option) {
+                    select.removeChild(option);
+                }
+                document.getElementById('i' + instr + '_q_price').style.visibility = 'hidden';
+                document.getElementById('i' + instr + '_q_qnt').style.visibility = 'hidden';
+                document.getElementById('i' + instr + '_btn_bid_span').style.visibility = 'hidden';
+                document.getElementById('i' + instr + '_btn_cancel_span').style.visibility = 'hidden';
+                
+            } else {
+                if ('tradable' in market) {
+                    var new_state = (market.tradable) && (instrumsForbid[instr] == 0)
+
+                    if (!new_state) {
+                        document.getElementById('i' + instr + '_btn_span').style.visibility = 'hidden';
+                    }
+                    document.getElementById('i' + instr + '_q_price').style.visibility = ((new_state) ? 'visible' : 'hidden');
+                    document.getElementById('i' + instr + '_q_qnt').style.visibility = ((new_state) ? 'visible' : 'hidden');
+                    document.getElementById('i' + instr + '_btn_bid_span').style.visibility = ((new_state) ? 'visible' : 'hidden');
+                    document.getElementById('i' + instr + '_btn_cancel_span').style.visibility = ((new_state) ? 'visible' : 'hidden');
+                }       
+            }     
+        }
+
+        if (market.bid.length > 0) {
+            document.getElementById('i' + instr + '_bid_2').innerText = market.bid[0].q;
+            document.getElementById('i' + instr + '_price_2').innerText = market.bid[0].p;
+        } else {
+            document.getElementById('i' + instr + '_bid_2').innerText = '\xa0\xa0\xa0\xa0\xa0\xa0';
+            document.getElementById('i' + instr + '_price_2').innerText = '\xa0\xa0\xa0\xa0\xa0\xa0';
+        }
+        if (market.ask.length > 0) {
+            document.getElementById('i' + instr + '_ask_1').innerText = market.ask[0].q;
+            document.getElementById('i' + instr + '_price_1').innerText = market.ask[0].p;
+        } else {
+            document.getElementById('i' + instr + '_ask_1').innerText = '\xa0\xa0\xa0\xa0\xa0\xa0';
+            document.getElementById('i' + instr + '_price_1').innerText = '\xa0\xa0\xa0\xa0\xa0\xa0';
+        }
+        document.getElementById('i' + instr + '_last_price').innerText  = market.last_p;
+
+        if (full && ('changes' in market)) {
+            for (var i = 0; i < market.changes.length; i++) {
+                if (market.changes[i][0] == 0) {
+                    document.getElementById('i' + instr + '_res_span').innerText = market.changes[i][1];
+                }
+            }
+        }
+
+        updateOrderBook(instr, market, playerOrders[instr]);
+        return updateChartData(instr, market.history, full);
+    }
+
+    function updateUserTrades(trds, full) {
+        //for (var i in trds) {
+        console.log('updateUserTrades', trds.length, playerTrades.length);
+            var r = updateStreamData(playerTrades, trds, full);
+        console.log('res', r, playerTrades.length);
+            if (r<0) { return true; }
+            if (r == 0) {
+                //full update
+                trds_table.setData(playerTrades);
+            } else {
+                for (var k = r; k < playerTrades.length; k++) {
+                    trds_table.addData(playerTrades[k], false);
+                }
+            }
+        //}
+        return false;
+    }
+
+    function publishMessage(msg) {
+        document.getElementById('message').innerText  = msg;
+        setTimeout(function() {document.getElementById('message').innerText = '\xa0';}, 4000);
+    }
+
+    function updatePlayerData(player, full) {
+        document.getElementById('msg-mon_0').innerText  = player.cash;
+        var posarr = player.pos;
+        var lockPosBArr = player.lockPosB;
+        var lockPosSArr = player.lockPosS;
+        for(var i = 0; i < posarr.length; i++) {
+            if (instrumsPosOnly[i] === 1) {
+                document.getElementById('msg-mon_' + (i).toString()).innerHTML = posarr[i] //+'<br><font size="-3">' +lockPosBArr[i] +" " +lockPosSArr[i] + '</font>';
+            } else {
+                document.getElementById('i' + (i).toString() + '_pos').innerHTML = posarr[i] //+'<br><font size="-3">' +lockPosBArr[i] +" " +lockPosSArr[i] + '</font>';
+            }
+        }
+        if ('forbid' in player) {
+            for(var i = 0; i < player.forbid.length; i++) {
+                instrumsForbid[i] = player.forbid[i]
+            }
+        }
+        if (full) {
+            if ('rate' in player) {
+                document.getElementById('msg-rate').innerText  = player.rate;
+            }
+            if ('messages' in player) {
+                if (msgs_table.getDataCount() < player.messages.length) {
+                    msgs_table.setData(player.messages);
+                }
+            }
+        }
+        updateProjectedScoreChart(player, full)
+        updateOrders(playerOrders, player.orders);
+        return updateUserTrades(player.trades, full);
+    }
+
+    function showEnd(res, data) {
+        if (res) {
+            showResState = true;
+            for (var i = 1; i < js_vars.instrums; i++) {
+                if (instrumsPosOnly[i] === 0) {
+                    // if (document.getElementById('i' + (i).toString() + '_span').style.visibility === 'visible') {
+                        document.getElementById('i' + (i).toString() + '_btn_span').style.visibility = 'hidden';
+                        document.getElementById('i' + (i).toString() + '_res_span').style.visibility = 'visible';
+                    // }
+                    document.getElementById('payoff_nm').innerText = 'Payoff';
+                }
+            }
+        } else {
+            if (showResState) {
+                showResState = false;
+                for (var i = 1; i < js_vars.instrums; i++) {
+                    if (instrumsPosOnly[i] === 0) {
+                        // if (document.getElementById('i' + (i).toString() + '_span').style.visibility === 'visible') {
+                            document.getElementById('i' + (i).toString() + '_btn_span').style.visibility = 'visible';
+                            document.getElementById('i' + (i).toString() + '_res_span').style.visibility = 'hidden';
+                            document.getElementById('i' + (i).toString() + '_res_span').innerText = '';
+                        // }
+                        document.getElementById('payoff_nm').innerText = '';
+                    }
+                }
+            }
+        }
+    }
+
+    function liveRecv(data) {
+        console.log('liveRecv', data);
+        var full = (data.type === 'full');
+        if (period_id !== data.period) {
+            period_id = data.period;
+            if (!full) {
+                liveSend({});
+                return;
+            }
+            document.getElementById('period_val').innerText  = data.period + ' | ' + js_vars.trial;
+        }
+
+        if ('timeleft' in data) {
+            updateCurrentTime(data.timeleft);
+        }
+        if ('message' in data) {
+            publishMessage(data.message);
+//            document.getElementById('message').innerText  = data.message;
+//            document.getElementById('message').style.visibility = 'visible';
+//            setInterval(function() {document.getElementById('message').innerText = '\xa0';}, 6000);
+        }
+        if ((marketStatus !== data.status) || (data.type === 'full')) {
+            switch (data.status) {
+                case 'PAUSE':
+                    showEnd(false, data);
+                    document.getElementById('game_status').innerText = 'Game paused';
+                //    document.getElementById('game_status').style.visibility = 'visible';
+                    {{ if player.isAdmin }}
+                    document.getElementById('start_pause').innerText = 'Start';
+                    {{ endif }}
+                    break;
+                case 'FINISHED':
+                    showEnd(true, data);
+                    document.getElementById("form").submit();
+                    return;
+                case 'END':
+                    document.getElementById('game_status').innerText = 'Period ended';
+                    showEnd(true, data);
+                  //  document.getElementById('game_status').style.visibility = 'visible';
+                    {{ if player.isAdmin }}
+                    document.getElementById('start_pause').innerText = ''; //Start
+                    {{ endif }}
+                    break;
+                default:
+                    showEnd(false, data);
+                    document.getElementById('game_status').innerText = '\xa0';
+//                    document.getElementById('game_status').style.visibility = 'hidden';
+                    {{ if player.isAdmin }}
+                    document.getElementById('start_pause').innerText = 'Pause';
+                    {{ endif }}
+            }
+            marketStatus = data.status;
+        }
+        if ('player' in data) {
+            if (updatePlayerData(data.player, full)) {
+                //lost some data, request full update
+                liveSend({});
+                return;
+            }
+        }
+        if ('market' in data) {
+            for (var i in data.market){
+                if (updateMarket(i, data.market[i], full)) {
+                    //lost some data, request full update
+                    liveSend({});
+                    return;
+                }
+            }
+        }
+
+    }
+
+    document.addEventListener("DOMContentLoaded", function (event) {
+        console.log('DOMContentLoaded');
+        liveSend({});
+    });
+</script>
+{{ if player.isAdmin }}
+<script>
+setInterval(function() {
+    liveSend({'type': 'timer', 'period':period_id});
+}, 500);
+
+    function f_start_pause() {
+        //|| (marketStatus == 'END')
+        if ((marketStatus === 'PAUSE') ) {
+            liveSend({'type': 'control', 'period':period_id, 'command': 'start'});
+        } else {
+            liveSend({'type': 'control', 'period':period_id, 'command': 'pause'});
+        }
+    }
+    function f_next_stage() {
+        liveSend({'type': 'control', 'period':period_id, 'command': 'start_next'});
+    }
+</script>
+{{ endif }}
+
+{{ endblock }}
