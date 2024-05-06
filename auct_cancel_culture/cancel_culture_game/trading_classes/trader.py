@@ -1,7 +1,6 @@
 # трейдер - класс для каждого игрока, где хранятся всего его данные (позиции, сделки и т.п.)
 # не имеет внешних настроек (все настройки в типах)
 
-from decimal import Decimal, ROUND_FLOOR
 
 from .pos_change import PosChange
 from .trader_type import TraderType
@@ -30,13 +29,13 @@ class Trader:
     # инициализации перед новой игрой
     def NewTrial(self):
         # позиции по инструментам
-        self.Position = [Decimal(p) for p in self.Type.InitialPositions]
+        self.Position = [float(p) for p in self.Type.InitialPositions]
         # изменения в позициях в конце периода
         self.Changes = [[] for _ in self.Position]
         # заблокированный в заявках объем на покупку
-        self.OrderLockBuy = [Decimal(0) for _ in self.Type.InitialPositions]
+        self.OrderLockBuy = [float(0) for _ in self.Type.InitialPositions]
         # заблокированный в заявках объем на продажу
-        self.OrderLockSell = [Decimal(0) for _ in self.Type.InitialPositions]
+        self.OrderLockSell = [float(0) for _ in self.Type.InitialPositions]
         # активные заявки трейдера
         self.Orders = [{} for _ in self.Position]
         # история сделок
@@ -62,7 +61,7 @@ class Trader:
         for idx, pos in enumerate(self.Position):
             if pos != 0:
                 # print('tr', idx, pos, [[c.id, c.delta] for c in self.Type.Instruments[idx].Changes])
-                self.Changes[idx] = [PosChange(p.id, (p.delta * pos).quantize(Decimal('0.01'), rounding=ROUND_FLOOR))
+                self.Changes[idx] = [PosChange(p.id, (p.delta * pos))
                                      for p in self.Type.Instruments[idx].Changes]
             else:
                 self.Changes[idx] = []
@@ -72,8 +71,8 @@ class Trader:
             for chn in changes:
                 self.Position[chn.id] += chn.delta
         # clear orders
-        self.OrderLockBuy = [Decimal(0) for _ in self.Type.InitialPositions]
-        self.OrderLockSell = [Decimal(0) for _ in self.Type.InitialPositions]
+        self.OrderLockBuy = [float(0) for _ in self.Type.InitialPositions]
+        self.OrderLockSell = [float(0) for _ in self.Type.InitialPositions]
         for p in self.Orders:
             p.clear()
 

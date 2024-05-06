@@ -1,6 +1,4 @@
 # класс типа трейдера
-from decimal import Decimal
-
 from .load_params import LoadParams
 
 
@@ -45,7 +43,7 @@ class TraderType(LoadParams):
                                                                         in self.NotAllowTrade}
         self.Session = ses
         self.Instruments = instrs
-        self.Params = {k: Decimal(self.Params[k]) for k in self.Params}
+        self.Params = {k: float(self.Params[k]) for k in self.Params}
         if (self.Params.get('calcMaxCash', 0) == 1) and (self.Params['b'] > 0):
             self.Params['maxCash'] = 1 / (self.Params['b'] * 2)
 
@@ -57,9 +55,9 @@ class TraderType(LoadParams):
     # посчитать баллы из денег (без учета Min и Max Score)
     def CalcScore(self, profit):
         if self.Params.get('maxCash', None) is not None:
-            pr = min(Decimal(profit), self.Params['maxCash'])
+            pr = min(float(profit), self.Params['maxCash'])
         else:
-            pr = Decimal(profit)
+            pr = float(profit)
         return (pr * (1 - pr * self.Params['b']) * self.Params['a'])
 
     # учет  Min и Max Score в баллах

@@ -1,4 +1,3 @@
-from decimal import Decimal
 from typing import List, Dict
 
 import numpy as np
@@ -105,11 +104,11 @@ class Market:
                 return None, None
 
             if ordertype == 'limit':
-                pr = Decimal(price)
+                pr = float(price)
             elif ord_sgn > 0:
-                pr = Decimal(1000000)
+                pr = float(1000000)
             else:
-                pr = Decimal(0)
+                pr = float(0)
             new_size = self.updateOrderSize(trader_id, instr_id, ordertype, pr, size, ord_sgn)
             if new_size <= 0:
                 return None, None
@@ -121,7 +120,7 @@ class Market:
         ob = instr.OB
         order = {'type': ordertype, 'side': buysell, 'quantity': int(min(new_size, size)), 'price': price,
                  'trade_id': trader_id}
-        trades, order_in_book = ob.process_order(order, False, True)
+        trades, order_in_book = ob.process_order(order)
         self.wasChanged[trader_id - 1, instr_id] = True
         global_order_id = self.get_new_order_id()
         base_instr_id = instr.BaseCurrency

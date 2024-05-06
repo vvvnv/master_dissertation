@@ -1,6 +1,4 @@
 # класс описывающий базовые свойства торгуемого инструмента
-from decimal import Decimal
-
 from .session_status import SessionStatus
 from .load_params import LoadParams
 from .pos_change import PosChange
@@ -274,34 +272,33 @@ class Security(LoadParams):
         return self.OB.min_offer
 
     # топ 6 лучших бидов
-    # def get_bids(self):
-    #     if self.OB is None:
-    #         return []
-    #     b_bids = []
-    #
-    #     for i in range(6):
-    #         if self.OB.bids.depth > i:
-    #             b_bid_pr = self.OB.bids.prices[-1 - i]
-    #             b_bid_vol = self.OB.bids.price_map[b_bid_pr].volume
-    #             b_bids.append({'i': i, 'q': str(b_bid_vol) if b_bid_vol < 100000 else u"\u221e", 'p': str(b_bid_pr)})
-    #         else:
-    #             break
-    #     return b_bids
-    #
-    # # топ 6 лучших асков
-    # def get_asks(self):
-    #     if self.OB is None:
-    #         return []
-    #     b_asks = []
-    #     for i in range(6):
-    #         if self.OB.asks.depth > i:
-    #             b_ask_pr = self.OB.asks.prices[i]
-    #             b_ask_vol = self.OB.asks.price_map[b_ask_pr].volume
-    #             b_asks.append({'i': i, 'q': str(b_ask_vol) if b_ask_vol < 100000 else u"\u221e", 'p': str(b_ask_pr)})
-    #         else:
-    #             break
-    #     #                b_asks.append({'i':i, 'q': '', 'p': ''})
-    #     return b_asks
+    def get_bids(self):
+        if self.OB is None:
+            return []
+        b_bids = []
+
+        for i in range(6):
+            if len(self.OB.bid_prices) > i:
+                b_bids.append({'i': i,
+                               'q': str(self.OB.bid_sizes[i]) if self.OB.bid_sizes[i] < 100000 else u"\u221e",
+                               'p': str(self.OB.bid_prices[i])})
+            else:
+                break
+        return b_bids
+
+    # топ 6 лучших асков
+    def get_asks(self):
+        if self.OB is None:
+            return []
+        b_asks = []
+        for i in range(6):
+            if len(self.OB.offer_prices) > i:
+                b_asks.append({'i': i,
+                               'q': str(self.OB.offer_sizes[i]) if self.OB.offer_sizes[i] < 100000 else u"\u221e",
+                               'p': str(self.OB.offer_prices[i])})
+            else:
+                break
+        return b_asks
 
     # текущая стоимость инструмента
     def GetValue(self):
@@ -320,7 +317,7 @@ class secStock(Security):
     def __init__(self, dictionary, session, num):
         super().__init__(dictionary, session, num)
         assert self.Type == "Stock"
-        self.Payouts = [Decimal(p) for p in self.Payouts]
+        self.Payouts = [float(p) for p in self.Payouts]
 
     # оценка выигрыша по сценариям
     def getProjectedProfit(self, scen):
@@ -335,7 +332,7 @@ class secStock(Security):
         for e in events:
             e_val = self.Session.getEventNumByName(e, self.Session.Events[e])
             cur_val = cur_val[e_val]
-        return Decimal(cur_val)
+        return float(cur_val)
 
     # обсчитать конец периода - выплаты дивидеднов и финальные по сценарию
     def CalcPeriodEnd(self):
@@ -379,7 +376,7 @@ class secCurrency(Security):
             tr = -1
         else:
             tr = self.Session.CurrentTrial - 1
-        return Decimal(self.Rates[tr][self.Session.CurrentPeriod - 1])
+        return float(self.Rates[tr][self.Session.CurrentPeriod - 1])
 
     # обсчитать конец периода - конвертация в другую валюту если надо
     def CalcPeriodEnd(self):
@@ -392,4 +389,4 @@ class secCurrency(Security):
 
     # текущая стоимость
     def GetValue(self):
-        return Decimal(1.0)
+        return float(1.0)
