@@ -1,9 +1,7 @@
 from otree.api import *
 from typing import List
 
-from auct_cancel_culture.cancel_culture_game.trading_classes import TradeSession, Trader, TraderType, Market, \
-    SessionStatus
-from auct_cancel_culture.cancel_culture_game.trading_classes.security import Security
+from cancel_culture_game.trading_classes import TradeSession, Trader, TraderType, Market, SessionStatus, Security
 
 c = Currency
 

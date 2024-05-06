@@ -1,7 +1,11 @@
 # трейдер - класс для каждого игрока, где хранятся всего его данные (позиции, сделки и т.п.)
 # не имеет внешних настроек (все настройки в типах)
-from auct_cancel_culture.cancel_culture_game.trading_classes import TraderType, PosChange
+
 from decimal import Decimal, ROUND_FLOOR
+
+from .pos_change import PosChange
+from .trader_type import TraderType
+
 
 class Trader:
     PrivateMessages = []
@@ -196,4 +200,3 @@ class Trader:
 
         sc = [self.getProjectedScore(s) for s in range(numSc)]
         return [[str(s), 1 if s >= self.Type.MinScoreLevel else 2] for s in sc]
-

@@ -1,10 +1,10 @@
 # класс описывающий базовые свойства торгуемого инструмента
 from decimal import Decimal
 
-from auct_cancel_culture.cancel_culture_game import SessionStatus
-from auct_cancel_culture.cancel_culture_game.trading_classes import LoadParams
-from auct_cancel_culture.cancel_culture_game.trading_classes import PosChange
-from my_orderbook import MyOrderBook
+from .session_status import SessionStatus
+from .load_params import LoadParams
+from .pos_change import PosChange
+from .my_orderbook import MyOrderBook
 
 
 class Security(LoadParams):

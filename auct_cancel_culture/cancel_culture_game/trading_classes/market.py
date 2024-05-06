@@ -3,8 +3,10 @@ from typing import List, Dict
 
 import numpy as np
 
-from auct_cancel_culture.cancel_culture_game.trading_classes import TradeSession, Trader, SessionStatus
-from auct_cancel_culture.cancel_culture_game.trading_classes.security import Security
+from .traiding_session import TradeSession
+from .trader import Trader
+from .session_status import SessionStatus
+from .security import Security
 
 
 # market

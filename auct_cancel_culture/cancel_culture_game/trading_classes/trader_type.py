@@ -1,7 +1,7 @@
 # класс типа трейдера
 from decimal import Decimal
 
-from auct_cancel_culture.cancel_culture_game.trading_classes import LoadParams
+from .load_params import LoadParams
 
 
 class TraderType(LoadParams):
