@@ -31,7 +31,7 @@ class Market:
             i.NewTrial()
         for t in self.trds:
             t.NewTrial()
-        self.wasChanged = np.zeros((len(self.trds), len(self.instrs)), dtype=np.bool)
+        self.wasChanged = np.zeros((len(self.trds), len(self.instrs)), dtype=bool)
         self.ExogeneousInstrs = [i for i, instr in enumerate(self.instrs) if instr.Exogeneous]
         self.hasExogeneous = (len(self.ExogeneousInstrs) > 0)
         self.nextTimeUpdate = 0
