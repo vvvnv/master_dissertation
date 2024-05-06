@@ -25,8 +25,8 @@ class MyOrderBook(object):
         self.offer_sizes = []
         self.bids = defaultdict(list)
         self.offers = defaultdict(list)
-        self.unprocessed_orders = queue.Queue()
-        self.trades = queue.Queue()
+        self.unprocessed_orders = []
+        self.trades = []
         self.order_id = 0
 
     def new_order_id(self):
@@ -83,7 +83,7 @@ class MyOrderBook(object):
                 trade = self.execute_match(incoming_order, book_order)
                 incoming_order.size = max(0, incoming_order.size - trade.size)
                 book_order.size = max(0, book_order.size - trade.size)
-                self.trades.put(trade)
+                self.trades.append(trade)
             levels[price] = [o for o in orders_at_level if o.size > 0]
             if len(levels[price]) == 0:
                 levels.pop(price)
@@ -150,9 +150,9 @@ if __name__ == '__main__':
     print('We receive these orders:')
     for order in orders:
         print(order)
-        ob.unprocessed_orders.put(order)
-    while not ob.unprocessed_orders.empty():
-        ob.process_order(ob.unprocessed_orders.get())
+        ob.unprocessed_orders.append(order)
+    while not len(ob.unprocessed_orders) == 0:
+        ob.process_order(ob.unprocessed_orders.pop(0))
     print()
     print('Resulting order book:')
     ob.show_book()
@@ -170,9 +170,9 @@ if __name__ == '__main__':
     print('We receive these orders:')
     for order in orders:
         print(order)
-        ob.unprocessed_orders.put(order)
-    while not ob.unprocessed_orders.empty():
-        ob.process_order(ob.unprocessed_orders.get())
+        ob.unprocessed_orders.append(order)
+    while not len(ob.unprocessed_orders) == 0:
+        ob.process_order(ob.unprocessed_orders.pop(0))
     print()
     print('Resulting order book:')
     ob.show_book()
@@ -180,6 +180,6 @@ if __name__ == '__main__':
     offer_order = Order(Side.SELL, 12.25, 100)
     print('Now we get a sell order {}'.format(offer_order))
     print('This removes the first two buy orders and creates a new price level on the sell side')
-    ob.unprocessed_orders.put(offer_order)
-    ob.process_order(ob.unprocessed_orders.get())
+    ob.unprocessed_orders.append(offer_order)
+    ob.process_order(ob.unprocessed_orders.pop(0))
     ob.show_book()
