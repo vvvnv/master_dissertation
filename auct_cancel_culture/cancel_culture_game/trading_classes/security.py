@@ -109,14 +109,17 @@ class Security(LoadParams):
         else:
             return deal_cash
 
-    # получить объем (в штуках инструмента) с учетом бюджетного ограничения и исполняетмого объема
+    # получить объем (в штуках инструмента) с учетом бюджетного ограничения и исполняемого объема
     def getOrderVolumeWithCashRestrict(self, ordertype, price, size, ord_sgn, allow_cash):
         deal_cash = 0
         deal_vol = 0
         if self.OB is not None:
+            self.OB.book_summary()
             if ord_sgn > 0:
+                print("prices _________", self.OB.offer_prices) # todo надо обновлять книгу после добавления в нее извне данных
                 for i in range(len(self.OB.offer_prices)):
                     pr = self.OB.offer_prices[i]
+                    print(f'{pr=}')
                     if pr > price:
                         break
                     vl = self.OB.offer_sizes[i]
@@ -263,12 +266,14 @@ class Security(LoadParams):
     def get_best_bid(self):
         if (self.OB is None) or (len(self.OB.bid_prices) == 0):
             return None
+        self.OB.book_summary()
         return self.OB.max_bid
 
     # лучший аск
     def get_best_ask(self):
         if (self.OB is None) or (len(self.OB.offer_prices) == 0):
             return None
+        self.OB.book_summary()
         return self.OB.min_offer
 
     # топ 6 лучших бидов

@@ -56,17 +56,12 @@ class Trader:
 
     # провести расчеты в конце периода
     def EndPeriod(self):
-        # get changes in positions at the end of period
-        # print('trader', [[c.id, c.delta] for ch in self.Changes for c in ch])
         for idx, pos in enumerate(self.Position):
             if pos != 0:
-                # print('tr', idx, pos, [[c.id, c.delta] for c in self.Type.Instruments[idx].Changes])
                 self.Changes[idx] = [PosChange(p.id, (p.delta * pos))
                                      for p in self.Type.Instruments[idx].Changes]
             else:
                 self.Changes[idx] = []
-        # apply changes
-        # print('trader', [[c.id, c.delta] for ch in self.Changes for c in ch])
         for changes in self.Changes:
             for chn in changes:
                 self.Position[chn.id] += chn.delta

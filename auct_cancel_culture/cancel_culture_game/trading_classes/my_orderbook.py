@@ -45,29 +45,33 @@ class MyOrderBook(object):
     def process_order(self, incoming_order_dict):
         """ Main processing function. If incoming_order matches delegate to process_match."""
         incoming_order = Order(
-            side=Side.BUY if incoming_order_dict['side'] else Side.SELL,
+            side=Side.SELL if incoming_order_dict['side'] else Side.BUY,
             price=float(incoming_order_dict['price']),
             size=float(incoming_order_dict['quantity']),
             trader_id=incoming_order_dict['trade_id'],
         )
         # incoming_order = incoming_order_dict
+        new_trades = []
         incoming_order.order_id = self.new_order_id()
         if incoming_order.side == Side.BUY:
             if incoming_order.price >= self.min_offer and self.offers:
-                self.process_match(incoming_order)
+                new_trades.append(self.process_match(incoming_order))
             else:
                 self.bids[incoming_order.price].append(incoming_order)
         else:
             if incoming_order.price <= self.max_bid and self.bids:
-                self.process_match(incoming_order)
+                new_trades.append(self.process_match(incoming_order))
             else:
                 self.offers[incoming_order.price].append(incoming_order)
-        return [], incoming_order.__dict__
+        self.book_summary()
+        return new_trades, incoming_order.__dict__
 
     def process_match(self, incoming_order):
         """ Match an incoming order against orders on the other side of the book, in price-time priority."""
         levels = self.bids if incoming_order.side == Side.SELL else self.offers
         prices = sorted(levels.keys(), reverse=(incoming_order.side == Side.SELL))
+
+        trade = None
 
         def price_doesnt_match(book_price):
             if incoming_order.side == Side.BUY:
@@ -93,17 +97,44 @@ class MyOrderBook(object):
         if incoming_order.quantity > 0:
             same_side = self.bids if incoming_order.side == Side.BUY else self.offers
             same_side[incoming_order.price].append(incoming_order)
+        return trade
 
     def execute_match(self, incoming_order, book_order):
         trade_size = min(incoming_order.quantity, book_order.quantity)
         return Trade(incoming_order.side, book_order.price, trade_size, incoming_order.order_id, book_order.order_id,
                      incoming_order.trader_id, book_order.trader_id)
 
+    def cancel_order(self, side, order_id):
+        for order_list in self.bids.values():
+            for order in order_list:
+                if order.order_id == order_id:
+                    order_list.remove(order)
+
+        for order_list in self.offers.values():
+            for order in order_list:
+                if order.order_id == order_id:
+                    order_list.remove(order)
+        self.book_summary()
+
     def book_summary(self):
         self.bid_prices = sorted(self.bids.keys(), reverse=True)
         self.offer_prices = sorted(self.offers.keys())
         self.bid_sizes = [sum(o.quantity for o in self.bids[p]) for p in self.bid_prices]
         self.offer_sizes = [sum(o.quantity for o in self.offers[p]) for p in self.offer_prices]
+        k = 0
+        while k < len(self.bid_sizes):
+            if self.bid_sizes[k] == 0:
+                self.bid_sizes.pop(k)
+                self.bid_prices.pop(k)
+            else:
+                k += 1
+        k = 0
+        while k < len(self.offer_sizes):
+            if self.offer_sizes[k] == 0:
+                self.offer_sizes.pop(k)
+                self.offer_prices.pop(k)
+            else:
+                k += 1
 
     def show_book(self):
         self.book_summary()

@@ -81,19 +81,26 @@ class Market:
     # получить лучший bid и ask по инструменту с номером instr_id
     def GetBestBidAsk(self, instr_id):
         instr = self.instrs[instr_id]
+        if instr.OB is not None:
+            instr.OB.book_summary()
         if not (instr.Active and instr.Tradable):
             return None, None
         return instr.get_best_bid(), instr.get_best_ask()
 
     # получить новый объем заявки с учетом ограничений трейдера на позиции
     def updateOrderSize(self, trader_id, instr_id, ordertype, price, size, ord_sgn):
+        for instr in self.instrs:
+            if instr.OB is not None:
+                instr.OB.book_summary()
         instr = self.instrs[instr_id]
         trader = self.trds[trader_id - 1]
         bc_id = instr.BaseCurrency
         cash = instr.getOrderVolumeWithIntersect(ordertype, price, size, ord_sgn)
         allow_size = trader.getOrderQntAllowed(instr_id, ord_sgn, size)
         allow_cash = trader.getOrderQntAllowed(bc_id, -ord_sgn, cash)
-        return instr.getOrderVolumeWithCashRestrict(ordertype, price, allow_size, ord_sgn, allow_cash)[0]
+        res = instr.getOrderVolumeWithCashRestrict(ordertype, price, allow_size, ord_sgn, allow_cash)[0]
+        print("RES = ", res)
+        return res
 
     # новая заявка
     def NewOrder(self, trader_id, instr_id, ordertype, price, size, buysell, ord_sgn, isAdmin=False):
@@ -111,6 +118,7 @@ class Market:
                 pr = float(0)
             new_size = self.updateOrderSize(trader_id, instr_id, ordertype, pr, size, ord_sgn)
             if new_size <= 0:
+                print("~~~~~~~~~~~~~~~~~~~~~~~~~~~ BBBBBBBBBBBBBBBBBBBBBBBBBB")
                 return None, None
         else:
             new_size = size
@@ -118,7 +126,10 @@ class Market:
         tm = self.ts.getLeftPeriodTime()
         period = self.ts.CurrentPeriod
         ob = instr.OB
-        order = {'type': ordertype, 'side': buysell, 'quantity': int(min(new_size, size)), 'price': price,
+        order = {'type': ordertype,
+                 'side': buysell,
+                 'quantity': int(min(new_size, size)),
+                 'price': '100000' if price is '' else price,
                  'trade_id': trader_id}
         trades, order_in_book = ob.process_order(order)
         self.wasChanged[trader_id - 1, instr_id] = True
@@ -235,8 +246,11 @@ class Market:
 
     # получить полное обновление рынков (стаканы, цены, графики)
     def GetFullMarketState(self) -> dict:
+
         res = {}
         for i, instr in enumerate(self.instrs):
+            if instr.OB is not None:
+                instr.OB.book_summary()
             if (instr.Type != 'Currency') or instr.Tradable:  # skip non tradable
                 res[i] = {'last_p': str(instr.LastPrice), 'active': instr.Active, 'tradable': instr.Tradable,
                           'bid': instr.get_bids(), 'ask': instr.get_asks(),
