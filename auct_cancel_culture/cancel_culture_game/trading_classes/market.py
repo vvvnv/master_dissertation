@@ -117,8 +117,7 @@ class Market:
             else:
                 pr = float(0)
             new_size = self.updateOrderSize(trader_id, instr_id, ordertype, pr, size, ord_sgn)
-            if new_size <= 0:
-                print("~~~~~~~~~~~~~~~~~~~~~~~~~~~ BBBBBBBBBBBBBBBBBBBBBBBBBB")
+            if new_size < 0:
                 return None, None
         else:
             new_size = size
