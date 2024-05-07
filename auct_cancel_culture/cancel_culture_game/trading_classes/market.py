@@ -125,10 +125,11 @@ class Market:
         tm = self.ts.getLeftPeriodTime()
         period = self.ts.CurrentPeriod
         ob = instr.OB
+        default_price = '100000' if buysell == 'bid' else '0'
         order = {'type': ordertype,
                  'side': buysell,
                  'quantity': int(min(new_size, size)),
-                 'price': '100000' if price == '' else price,
+                 'price': default_price if price == '' else price,
                  'trade_id': trader_id}
         trades, order_in_book = ob.process_order(order)
         self.wasChanged[trader_id - 1, instr_id] = True
@@ -207,7 +208,8 @@ class Market:
                                 trader.clear_orders_i(i, self.instrs[i], 'all')
                         else:
                             self.trds[admin_id - 1].clear_orders_i(i, self.instrs[i], 'all')
-                        self.NewOrder(admin_id, i, 'limit', str(res[1]), 1000000, 'bid', 1, True) # fixme вот тут тонкое место
+                        self.NewOrder(admin_id, i, 'limit', str(res[1]), 1000000, 'bid', 1,
+                                      True)  # fixme вот тут тонкое место
                         self.NewOrder(admin_id, i, 'limit', str(res[2]), 1000000, 'ask', -1, True)
                         self.instrs[i].checkSaveChartHistory(self.ts.getLeftPeriodTime())
                         new_NextTime = min(new_NextTime, new_time)
