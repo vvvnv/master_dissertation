@@ -100,6 +100,7 @@ def create_round(subsession):
                                [330, 'Продолжается рост спроса на услуги компании 5', True],
                                [360, 'Нет новостей', False]]]],
             'InsiderRatio': [50, 100, 100, 100],
+            'BadCompany': [1, 2, 1, 2]
         }
         trd_ses = TradeSession(ses_params)
 

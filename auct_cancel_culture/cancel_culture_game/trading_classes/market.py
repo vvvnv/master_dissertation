@@ -30,8 +30,8 @@ class Market:
         for i in self.instrs:
             i.NewTrial()
         for t in self.trds:
-            is_insider = randint(0,100) < self.ts.InsiderRatio[self.ts.CurrentTrial - 1]
-            t.NewTrial(is_insider)
+            is_insider = randint(0, 100) < self.ts.InsiderRatio[self.ts.CurrentTrial - 1]
+            t.NewTrial(is_insider=is_insider, bad_company=self.ts.BadCompany)
         self.wasChanged = np.zeros((len(self.trds), len(self.instrs)), dtype=bool)
         self.ExogeneousInstrs = [i for i, instr in enumerate(self.instrs) if instr.Exogeneous]
         self.hasExogeneous = (len(self.ExogeneousInstrs) > 0)
@@ -301,13 +301,15 @@ class Market:
     # полное обновление по трейдеру: позиции, заявки, сделки, сообщения
     def GetFullTraderState(self, trader_id) -> dict:
         trader = self.trds[trader_id - 1]
-        res = {'cash': str(trader.Cash), 'rate': "{:.2f}".format(self.instrs[0].GetRate()),
+        res = {'cash': str(trader.Cash),
+               'rate': "{:.2f}".format(self.instrs[0].GetRate()),
                'pos': [str(p) for p in trader.Position],
                'lockPosB': [str(p) for p in trader.OrderLockBuy],
                'lockPosS': [str(p) for p in trader.OrderLockSell],
-               'forbid': trader.getForbidInstrsState(), 'scorePr': trader.get_score_data(self.ts.NumScenarios)}
-        res['orders'] = {i: trader.getOrders(i) for i in range(1, len(self.instrs))}
-        res['trades'] = trader.Trades
+               'forbid': trader.getForbidInstrsState(),
+               'scorePr': trader.get_score_data(self.ts.NumScenarios),
+               'orders': {i: trader.getOrders(i) for i in range(1, len(self.instrs))},
+               'trades': trader.Trades}
         all_msgs = self.GetMessages(trader)
         if len(all_msgs) > 0:
             res['messages'] = all_msgs

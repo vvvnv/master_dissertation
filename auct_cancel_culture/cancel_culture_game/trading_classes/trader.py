@@ -27,7 +27,7 @@ class Trader:
         self.Position[0] = value
 
     # инициализации перед новой игрой
-    def NewTrial(self, is_insider: bool = False):
+    def NewTrial(self, is_insider: bool = False, bad_company: int = 1):
         # позиции по инструментам
         self.Position = [float(p) for p in self.Type.InitialPositions]
         # изменения в позициях в конце периода
@@ -46,7 +46,10 @@ class Trader:
         self.PrivateMessages = []
         # является ли инсайдером
         self.is_insider = is_insider
-        print(f'!!!!!!!!!!!!!!!!!!!!!!!!!! TRADER {self.Type.Name} is {self.is_insider}')
+        # плохая компания
+        self.bad_company = bad_company
+        # кол-во сделок с "плохой" компанией
+        self.bad_trades_num = 0
 
     # инициализации перед новым периодом
     def NextPeriod(self):
@@ -111,7 +114,8 @@ class Trader:
 
     # оценка стоимости текущего портфеля по сценарию scen
     def getProjectedScore(self, scen):
-        cash = sum(self.Type.Instruments[i].getProjectedProfit(scen) * pos for i, pos in enumerate(self.Position))
+        cash = sum(self.Type.Instruments[i].getProjectedProfit(scen) * pos for i, pos in enumerate(self.Position)) * (
+                1 - self.bad_trades_num / len(self.Trades))
         return self.Type.CalcScore(cash)
 
     # расчет выигрыша
@@ -175,6 +179,8 @@ class Trader:
         tr_sgn = 1 if side == 'bid' else -1
         self.Type.Instruments[instr_id].procTrade(self, price, tr_sgn * qnt, tm)
         self.Trades.append({'instr': instr_id, 'period': period, 'time': tm, 'p': str(price), 'q': int(tr_sgn * qnt)})
+        if instr_id == self.bad_company:
+            self.bad_trades_num += 1
         #        self.Type.Instruments[instr_id].Transaction(self, price, tr_sgn * qnt)
         if order_id is not None:
             if tr_sgn > 0:
