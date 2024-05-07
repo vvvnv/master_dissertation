@@ -44,26 +44,46 @@ class MyOrderBook(object):
 
     def process_order(self, incoming_order_dict):
         """ Main processing function. If incoming_order matches delegate to process_match."""
+        self.book_summary()
+        print(f'{incoming_order_dict=}')
+        if incoming_order_dict['type'] == 'limit' and incoming_order_dict['side'] == 'bid':
+            side = Side.BUY
+        elif incoming_order_dict['type'] == 'limit' and incoming_order_dict['side'] == 'ask':
+            side = Side.SELL
+        elif incoming_order_dict['type'] == 'market' and incoming_order_dict['side'] == 'bid':
+            side = Side.SELL
+        elif incoming_order_dict['type'] == 'market' and incoming_order_dict['side'] == 'ask':
+            side = Side.BUY
+        else:
+            raise Exception('wrong config')
         incoming_order = Order(
-            side=Side.SELL if incoming_order_dict['side'] else Side.BUY,
+            side=side,
             price=float(incoming_order_dict['price']),
             size=float(incoming_order_dict['quantity']),
             trader_id=incoming_order_dict['trade_id'],
         )
         # incoming_order = incoming_order_dict
-        new_trades = []
+        new_trades = None
         incoming_order.order_id = self.new_order_id()
         if incoming_order.side == Side.BUY:
             if incoming_order.price >= self.min_offer and self.offers:
-                new_trades.append(self.process_match(incoming_order))
+                new_trades = self.process_match(incoming_order)
             else:
                 self.bids[incoming_order.price].append(incoming_order)
         else:
             if incoming_order.price <= self.max_bid and self.bids:
-                new_trades.append(self.process_match(incoming_order))
+                new_trades = self.process_match(incoming_order)
             else:
                 self.offers[incoming_order.price].append(incoming_order)
         self.book_summary()
+        if new_trades is not None:
+            new_trades = [{
+                'party1': [new_trades.party2, 'bid' if incoming_order_dict['side'] == 'bid' else 'ask',
+                           incoming_order.order_id],
+                'party2': [new_trades.party1, 'ask' if incoming_order_dict['side'] == 'bid' else 'bid', None]
+            }]
+        else:
+            new_trades = []
         return new_trades, incoming_order.__dict__
 
     def process_match(self, incoming_order):

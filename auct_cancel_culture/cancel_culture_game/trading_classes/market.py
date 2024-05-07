@@ -129,7 +129,7 @@ class Market:
         order = {'type': ordertype,
                  'side': buysell,
                  'quantity': int(min(new_size, size)),
-                 'price': '100000' if price is '' else price,
+                 'price': '100000' if price == '' else price,
                  'trade_id': trader_id}
         trades, order_in_book = ob.process_order(order)
         self.wasChanged[trader_id - 1, instr_id] = True
@@ -201,7 +201,7 @@ class Market:
                                 trader.clear_orders_i(i, self.instrs[i], 'all')
                         else:
                             self.trds[admin_id - 1].clear_orders_i(i, self.instrs[i], 'all')
-                        self.NewOrder(admin_id, i, 'limit', str(res[1]), 1000000, 'bid', 1, True)
+                        self.NewOrder(admin_id, i, 'limit', str(res[1]), 1000000, 'bid', 1, True) # fixme вот тут тонкое место
                         self.NewOrder(admin_id, i, 'limit', str(res[2]), 1000000, 'ask', -1, True)
                         self.instrs[i].checkSaveChartHistory(self.ts.getLeftPeriodTime())
                         new_NextTime = min(new_NextTime, new_time)
@@ -237,8 +237,10 @@ class Market:
             if instr.Tradable:  # skip non tradable
                 res[trd_id]['orders'][instr_id] = trader.getOrders(instr_id)
                 if instr_id not in res[0]:
-                    res[0][instr_id] = {'last_p': str(instr.LastPrice), 'bid': instr.get_bids(),
-                                        'ask': instr.get_asks(), 'history': instr.get_last_history()}
+                    res[0][instr_id] = {'last_p': str(instr.LastPrice),
+                                        'bid': instr.get_bids(),
+                                        'ask': instr.get_asks(),
+                                        'history': instr.get_last_history()}
 
         self.wasChanged.fill(False)
 
