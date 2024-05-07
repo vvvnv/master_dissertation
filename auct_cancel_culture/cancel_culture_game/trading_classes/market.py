@@ -155,8 +155,15 @@ class Market:
                                                      tr['price'], tr['party1'][2], tr['party1'][3], tm)
             self.wasChanged[tr['party1'][0] - 1, instr_id] = True
             self.wasChanged[tr['party1'][0] - 1, base_instr_id] = True
-            self.trds[tr['party2'][0] - 1].procTrade(period, instr_id, base_instr_id, tr['party2'][1], tr['quantity'],
-                                                     tr['price'], tr['party2'][2], tr['party2'][3], tm)
+            self.trds[tr['party2'][0] - 1].procTrade(period,
+                                                     instr_id,
+                                                     base_instr_id,
+                                                     tr['party2'][1],
+                                                     tr['quantity'],
+                                                     tr['price'],
+                                                     tr['party2'][2],
+                                                     tr['party2'][3],
+                                                     tm)
             self.wasChanged[tr['party2'][0] - 1, instr_id] = True
             self.wasChanged[tr['party2'][0] - 1, base_instr_id] = True
         return global_order_id, trds_res

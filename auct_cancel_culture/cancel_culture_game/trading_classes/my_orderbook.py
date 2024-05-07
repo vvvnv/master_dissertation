@@ -51,9 +51,9 @@ class MyOrderBook(object):
         elif incoming_order_dict['type'] == 'limit' and incoming_order_dict['side'] == 'ask':
             side = Side.SELL
         elif incoming_order_dict['type'] == 'market' and incoming_order_dict['side'] == 'bid':
-            side = Side.SELL
-        elif incoming_order_dict['type'] == 'market' and incoming_order_dict['side'] == 'ask':
             side = Side.BUY
+        elif incoming_order_dict['type'] == 'market' and incoming_order_dict['side'] == 'ask':
+            side = Side.SELL
         else:
             raise Exception('wrong config')
         incoming_order = Order(
@@ -64,24 +64,27 @@ class MyOrderBook(object):
         )
         # incoming_order = incoming_order_dict
         new_trades = None
+        ioq = 0
         incoming_order.order_id = self.new_order_id()
         if incoming_order.side == Side.BUY:
             if incoming_order.price >= self.min_offer and self.offers:
-                new_trades = self.process_match(incoming_order)
+                new_trades, ioq = self.process_match(incoming_order)
             else:
                 self.bids[incoming_order.price].append(incoming_order)
         else:
             if incoming_order.price <= self.max_bid and self.bids:
-                new_trades = self.process_match(incoming_order)
+                new_trades, ioq = self.process_match(incoming_order)
             else:
                 self.offers[incoming_order.price].append(incoming_order)
         self.book_summary()
         if new_trades is not None:
             new_trades = [{
-                'party1': [new_trades.party2, 'bid' if incoming_order_dict['side'] == 'bid' else 'ask',
-                           incoming_order.order_id],
-                'party2': [new_trades.party1, 'ask' if incoming_order_dict['side'] == 'bid' else 'bid', None]
-            }]
+                'party1': [new_trade.party1, 'bid' if incoming_order_dict['side'] == 'bid' else 'ask',
+                           incoming_order.order_id, ioq],
+                'party2': [new_trade.party2, 'ask' if incoming_order_dict['side'] == 'bid' else 'bid', None, ioq],
+                'quantity': new_trade.size,
+                'price': new_trade.price
+            } for new_trade in new_trades]
         else:
             new_trades = []
         return new_trades, incoming_order.__dict__
@@ -91,7 +94,7 @@ class MyOrderBook(object):
         levels = self.bids if incoming_order.side == Side.SELL else self.offers
         prices = sorted(levels.keys(), reverse=(incoming_order.side == Side.SELL))
 
-        trade = None
+        new_trades = []
 
         def price_doesnt_match(book_price):
             if incoming_order.side == Side.BUY:
@@ -109,6 +112,7 @@ class MyOrderBook(object):
                 trade = self.execute_match(incoming_order, book_order)
                 incoming_order.quantity = max(0, incoming_order.quantity - trade.size)
                 book_order.quantity = max(0, book_order.quantity - trade.size)
+                new_trades.append(trade)
                 self.trades.append(trade)
             levels[price] = [o for o in orders_at_level if o.quantity > 0]
             if len(levels[price]) == 0:
@@ -117,7 +121,7 @@ class MyOrderBook(object):
         if incoming_order.quantity > 0:
             same_side = self.bids if incoming_order.side == Side.BUY else self.offers
             same_side[incoming_order.price].append(incoming_order)
-        return trade
+        return new_trades, incoming_order.quantity
 
     def execute_match(self, incoming_order, book_order):
         trade_size = min(incoming_order.quantity, book_order.quantity)

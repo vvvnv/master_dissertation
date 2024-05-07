@@ -50,7 +50,7 @@ class Trader:
         self.PrivateMessages = []
         # pass
 
-    # отправить приватное сообщение  игроку
+    # отправить приватное сообщение игроку
     def SendPrivateMessage(self, tm, msg):
         self.PrivateMessages.append([tm, msg])
 
