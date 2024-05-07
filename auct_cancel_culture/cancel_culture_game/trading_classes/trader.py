@@ -27,7 +27,7 @@ class Trader:
         self.Position[0] = value
 
     # инициализации перед новой игрой
-    def NewTrial(self):
+    def NewTrial(self, is_insider: bool = False):
         # позиции по инструментам
         self.Position = [float(p) for p in self.Type.InitialPositions]
         # изменения в позициях в конце периода
@@ -44,6 +44,9 @@ class Trader:
         self.LastSendTrades = 0
         # отправленные приватные сообщения
         self.PrivateMessages = []
+        # является ли инсайдером
+        self.is_insider = is_insider
+        print(f'!!!!!!!!!!!!!!!!!!!!!!!!!! TRADER {self.Type.Name} is {self.is_insider}')
 
     # инициализации перед новым периодом
     def NextPeriod(self):

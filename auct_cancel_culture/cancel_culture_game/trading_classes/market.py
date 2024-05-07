@@ -1,3 +1,4 @@
+from random import randint
 from typing import List, Dict
 
 import numpy as np
@@ -29,7 +30,8 @@ class Market:
         for i in self.instrs:
             i.NewTrial()
         for t in self.trds:
-            t.NewTrial()
+            is_insider = randint(0,100) < self.ts.InsiderRatio[self.ts.CurrentTrial - 1]
+            t.NewTrial(is_insider)
         self.wasChanged = np.zeros((len(self.trds), len(self.instrs)), dtype=bool)
         self.ExogeneousInstrs = [i for i, instr in enumerate(self.instrs) if instr.Exogeneous]
         self.hasExogeneous = (len(self.ExogeneousInstrs) > 0)
@@ -208,8 +210,7 @@ class Market:
                                 trader.clear_orders_i(i, self.instrs[i], 'all')
                         else:
                             self.trds[admin_id - 1].clear_orders_i(i, self.instrs[i], 'all')
-                        self.NewOrder(admin_id, i, 'limit', str(res[1]), 1000000, 'bid', 1,
-                                      True)  # fixme вот тут тонкое место
+                        self.NewOrder(admin_id, i, 'limit', str(res[1]), 1000000, 'bid', 1, True)
                         self.NewOrder(admin_id, i, 'limit', str(res[2]), 1000000, 'ask', -1, True)
                         self.instrs[i].checkSaveChartHistory(self.ts.getLeftPeriodTime())
                         new_NextTime = min(new_NextTime, new_time)
@@ -290,8 +291,12 @@ class Market:
     # все сообщения отправленные трейдеру trader
     def GetMessages(self, trader):
         # trader = self.trds[trader_id-1]
-        return [{'time': self.ts.getPeriodLength() - m[0], 'msg': m[1]} for m in trader.PrivateMessages] + \
-            [{'time': self.ts.getPeriodLength() - m[0], 'msg': m[1]} for m in reversed(self.Messages)]
+        is_insider = trader.is_insider
+        msgs = []
+        for m in reversed(self.Messages):
+            if m[2] is False or is_insider:
+                msgs.append({'time': self.ts.getPeriodLength() - m[0], 'msg': m[1]})
+        return [{'time': self.ts.getPeriodLength() - m[0], 'msg': m[1]} for m in trader.PrivateMessages] + msgs
 
     # полное обновление по трейдеру: позиции, заявки, сделки, сообщения
     def GetFullTraderState(self, trader_id) -> dict:
