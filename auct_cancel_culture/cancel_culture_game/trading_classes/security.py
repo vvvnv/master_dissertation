@@ -36,7 +36,7 @@ class Security(LoadParams):
     Tradable = True  # если False, то инструмент не торгуется
     # Hidden = False
     BaseCurrency = 0  # номер инструмента в котором идут расчеты за сделки - обычно кэш - 0-й инструмент
-
+    OB = MyOrderBook()
     # создать из словаря
     def __init__(self, dictionary, session, num):
         self.PeriodCounts = session.NumPeriodsPerTrial

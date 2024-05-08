@@ -294,8 +294,9 @@ class Market:
         is_insider = trader.is_insider
         msgs = []
         for m in reversed(self.Messages):
-            if m[2] is False or is_insider:
-                msgs.append({'time': self.ts.getPeriodLength() - m[0], 'msg': m[1]})
+            if len(m) == 3:
+                if m[2] is False or is_insider:
+                    msgs.append({'time': self.ts.getPeriodLength() - m[0], 'msg': m[1]})
         return [{'time': self.ts.getPeriodLength() - m[0], 'msg': m[1]} for m in trader.PrivateMessages] + msgs
 
     # полное обновление по трейдеру: позиции, заявки, сделки, сообщения

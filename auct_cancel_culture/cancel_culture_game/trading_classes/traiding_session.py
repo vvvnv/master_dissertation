@@ -52,8 +52,8 @@ class TradeSession(LoadParams):
 
     # если цены указаны экзогенно, то очищать ли заявки игроков перед изменением или исполнять
     ClearOrdersExogeniousPriceChange = True
-    InsiderRatio = [50, 100, 100, 100]
-    BadCompany = [1, 2, 3, 4]
+    InsiderRatio = []
+    BadCompany = []
 
     # создание TradeSession из словаря параметров
     def __init__(self, dictionary):

@@ -58,7 +58,7 @@ class TraderType(LoadParams):
             pr = min(float(profit), self.Params['maxCash'])
         else:
             pr = float(profit)
-        return (pr * (1 - pr * self.Params['b']) * self.Params['a'])
+        return pr  # (pr * (1 - pr * self.Params['b']) * self.Params['a'])
 
     # учет  Min и Max Score в баллах
     def LimitScore(self, unlimScore):

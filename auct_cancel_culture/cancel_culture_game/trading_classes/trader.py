@@ -11,6 +11,9 @@ class Trader:
 
     def __init__(self, tp: TraderType):
         self.Type = tp
+        self.bad_company = None
+        # кол-во сделок с "плохой" компанией
+        self.bad_trades_num = 0
 
     # изменить тип игрока на другой - не используется
     def ChangeType(self, tp: TraderType):
@@ -63,11 +66,8 @@ class Trader:
     # провести расчеты в конце периода
     def EndPeriod(self):
         for idx, pos in enumerate(self.Position):
-            if pos != 0:
-                self.Changes[idx] = [PosChange(p.id, (p.delta * pos))
-                                     for p in self.Type.Instruments[idx].Changes]
-            else:
-                self.Changes[idx] = []
+            self.Changes[idx] = [PosChange(p.id, (p.delta * pos))
+                                 for p in self.Type.Instruments[idx].Changes]
         for changes in self.Changes:
             for chn in changes:
                 self.Position[chn.id] += chn.delta
@@ -114,13 +114,19 @@ class Trader:
 
     # оценка стоимости текущего портфеля по сценарию scen
     def getProjectedScore(self, scen):
-        cash = sum(self.Type.Instruments[i].getProjectedProfit(scen) * pos for i, pos in enumerate(self.Position)) * (
-                1 - self.bad_trades_num / len(self.Trades))
+        cash = sum(self.Type.Instruments[i].getProjectedProfit(scen) * pos for i, pos in enumerate(self.Position))
         return self.Type.CalcScore(cash)
 
     # расчет выигрыша
     def getProfit(self):
-        return sum([self.Type.Instruments[i].GetValue() * pos for i, pos in enumerate(self.Position)])
+        if len(self.Trades) == 0:
+            k = 1
+        else:
+            k = 1 - self.bad_trades_num / len(self.Trades)
+        print(self.Type.Name)
+        print(f"{k=}")
+        print(f"{[pos for i, pos in enumerate(self.Position)]=}")
+        return sum([self.Type.Instruments[i].GetValue() * pos for i, pos in enumerate(self.Position)]) * k
 
     # добавление заявки в активные заявки
     def addOrder(self, instr_id, base_instr_id, order_id, order, global_order_id):
