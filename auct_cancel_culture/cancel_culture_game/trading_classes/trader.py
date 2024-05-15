@@ -4,6 +4,7 @@
 
 from .pos_change import PosChange
 from .trader_type import TraderType
+from decimal import Decimal, ROUND_FLOOR
 
 
 class Trader:
@@ -30,7 +31,7 @@ class Trader:
         self.Position[0] = value
 
     # инициализации перед новой игрой
-    def NewTrial(self, is_insider: bool = False, bad_company: int = 1):
+    def NewTrial(self, is_insider: bool = False, bad_company: int = 1, cur_round_num: int = 1):
         # позиции по инструментам
         self.Position = [float(p) for p in self.Type.InitialPositions]
         # изменения в позициях в конце периода
@@ -54,6 +55,8 @@ class Trader:
         # кол-во сделок с "плохой" компанией
         self.bad_trades_num = 0
 
+        self.cur_round_num = cur_round_num
+
     # инициализации перед новым периодом
     def NextPeriod(self):
         self.PrivateMessages = []
@@ -65,15 +68,22 @@ class Trader:
 
     # провести расчеты в конце периода
     def EndPeriod(self):
+        # get changes in positions at the end of period
+        # print('trader', [[c.id, c.delta] for ch in self.Changes for c in ch])
+        print("END PERIOD PSOITIONS ==========", self.Position)
+
         for idx, pos in enumerate(self.Position):
             self.Changes[idx] = [PosChange(p.id, (p.delta * pos))
                                  for p in self.Type.Instruments[idx].Changes]
-        for changes in self.Changes:
-            for chn in changes:
-                self.Position[chn.id] += chn.delta
+        print("END PERIOD PERIODS ==========", self.Position)
+        # for changes in self.Changes:
+        #    for chn in changes:
+        #        self.Position[chn.id] += chn.delta
+        # print("END PERIOD PSOITIONS AFTER CHANGES ==========", self.Position)
+
         # clear orders
-        self.OrderLockBuy = [float(0) for _ in self.Type.InitialPositions]
-        self.OrderLockSell = [float(0) for _ in self.Type.InitialPositions]
+        self.OrderLockBuy = [Decimal(0) for _ in self.Type.InitialPositions]
+        self.OrderLockSell = [Decimal(0) for _ in self.Type.InitialPositions]
         for p in self.Orders:
             p.clear()
 
@@ -119,14 +129,8 @@ class Trader:
 
     # расчет выигрыша
     def getProfit(self):
-        if len(self.Trades) == 0:
-            k = 1
-        else:
-            k = 1 - self.bad_trades_num / len(self.Trades)
-        print(self.Type.Name)
-        print(f"{k=}")
-        print(f"{[pos for i, pos in enumerate(self.Position)]=}")
-        return sum([self.Type.Instruments[i].GetValue() * pos for i, pos in enumerate(self.Position)]) * k
+        print([(self.Type.Instruments[i].GetValue(self.cur_round_num), pos) for i, pos in enumerate(self.Position)])
+        return sum([self.Type.Instruments[i].GetValue(self.cur_round_num) * pos for i, pos in enumerate(self.Position)])
 
     # добавление заявки в активные заявки
     def addOrder(self, instr_id, base_instr_id, order_id, order, global_order_id):

@@ -31,7 +31,7 @@ class Market:
             i.NewTrial()
         for t in self.trds:
             is_insider = randint(0, 100) < self.ts.InsiderRatio[self.ts.CurrentTrial - 1]
-            t.NewTrial(is_insider=is_insider, bad_company=self.ts.BadCompany)
+            t.NewTrial(is_insider=is_insider, bad_company=self.ts.BadCompany, cur_round_num=self.ts.CurrentTrial - 1)
         self.wasChanged = np.zeros((len(self.trds), len(self.instrs)), dtype=bool)
         self.ExogeneousInstrs = [i for i, instr in enumerate(self.instrs) if instr.Exogeneous]
         self.hasExogeneous = (len(self.ExogeneousInstrs) > 0)

@@ -37,6 +37,7 @@ class Security(LoadParams):
     # Hidden = False
     BaseCurrency = 0  # номер инструмента в котором идут расчеты за сделки - обычно кэш - 0-й инструмент
     OB = MyOrderBook()
+
     # создать из словаря
     def __init__(self, dictionary, session, num):
         self.PeriodCounts = session.NumPeriodsPerTrial
@@ -116,7 +117,8 @@ class Security(LoadParams):
         if self.OB is not None:
             self.OB.book_summary()
             if ord_sgn > 0:
-                print("prices _________", self.OB.offer_prices) # todo надо обновлять книгу после добавления в нее извне данных
+                print("prices _________",
+                      self.OB.offer_prices)  # todo надо обновлять книгу после добавления в нее извне данных
                 for i in range(len(self.OB.offer_prices)):
                     pr = self.OB.offer_prices[i]
                     print(f'{pr=}')
@@ -306,7 +308,7 @@ class Security(LoadParams):
         return b_asks
 
     # текущая стоимость инструмента
-    def GetValue(self):
+    def GetValue(self, round_num):
         return 0
 
 
@@ -354,6 +356,9 @@ class secStock(Security):
             money_change = self.Payouts[self.Session.Scenario]
         self.Changes += [PosChange(0, money_change), PosChange(self.Num, -1)]
 
+    def GetValue(self, round_num):
+        return self.Payouts[round_num]
+
 
 class secCurrency(Security):
     Type = "Currency"  # Bond / Stock / Currency / Forward / Option
@@ -393,5 +398,5 @@ class secCurrency(Security):
                                 PosChange(self.Num, -1)]
 
     # текущая стоимость
-    def GetValue(self):
+    def GetValue(self, round_num: int):
         return float(1.0)
