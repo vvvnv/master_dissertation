@@ -15,7 +15,7 @@ SESSION_CONFIGS = [
         name='cancel_culture_game',
         display_name="Auction game",
         app_sequence=['survey_short', 'cancel_culture_game'],
-        num_demo_participants=4,
+        num_demo_participants=2,
     )
 ]
 

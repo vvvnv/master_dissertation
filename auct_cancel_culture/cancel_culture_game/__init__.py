@@ -1,5 +1,6 @@
 from otree.api import *
 from typing import List
+import random
 
 from cancel_culture_game.trading_classes import TradeSession, Trader, TraderType, Market, SessionStatus, Security
 
@@ -40,20 +41,20 @@ def create_round(subsession):
         # словарь всех параметров которые нужно изменить по сравнению с дефолтными
         ses_params = {
             'NumPeriodsPerTrial': 1,
-            'PeriodLength': 5,
+            'PeriodLength': 180,
             'TimerEnabled': True,
             'NumScenarios': 4,
             'ScenarioNames': ['1', '2', '3', '4'],
             'ScenarioDeterminationPeriod': 1,
             'ScenarioList': [1, 2, 3, 4],
             'TimeMessagesEnabled': True,
-            'TimeMessages': [[[[0, 'Компания 2 загрязняет окружающую среду, что привело к массовым протестам', True],
+            'TimeMessages': [[[[0, 'Компания 2 плохая', True],
                                [180, 'Нет новостей', False]]],
-                             [[[0, 'Компания 2 использует детский труд, что привело к массовым протестам', True],
+                             [[[0, 'Компания 2 плохая', True],
                                [180, 'Нет новостей', False]]],
-                             [[[0, 'Компания 3 оказалась пирамидой', True],
+                             [[[0, 'Компания 3 плохая', True],
                                [180, 'Нет новостей', False]]],
-                             [[[0, 'Компания 4 производит препараты, вредящие организму человека', True],
+                             [[[0, 'Компания 4 плохая', True],
                                [180, 'Нет новостей', False]]]],
             'InsiderRatio': [25, 40, 50, 70],
             'BadCompany': [2, 2, 3, 4]
@@ -74,7 +75,8 @@ def create_round(subsession):
                 'PriceBounds': (0, 10000),
                 'Exogeneous': False,
                 'MaxQtyBound': 10000,
-                'Payouts': [110, 110, 110, 110]
+                'Payouts': [random.randint(100, 120), random.randint(100, 120), random.randint(100, 120),
+                            random.randint(100, 120)]
             },
             {
                 'Name': 'Co. 2',
@@ -84,7 +86,7 @@ def create_round(subsession):
                 'PriceBounds': (0, 10000),
                 'Exogeneous': False,
                 'MaxQtyBound': 10000,
-                'Payouts': [0, 0, 110, 110]
+                'Payouts': [0, 0, random.randint(100, 120), random.randint(100, 120)]
             },
             {
                 'Name': 'Co. 3',
@@ -94,7 +96,7 @@ def create_round(subsession):
                 'PriceBounds': (0, 10000),
                 'Exogeneous': False,
                 'MaxQtyBound': 10000,
-                'Payouts': [110, 110, 0, 110]
+                'Payouts': [random.randint(100, 120), random.randint(100, 120), 0, random.randint(100, 120)]
             },
             {
                 'Name': 'Co. 4',
@@ -104,7 +106,7 @@ def create_round(subsession):
                 'PriceBounds': (0, 10000),
                 'Exogeneous': False,
                 'MaxQtyBound': 10000,
-                'Payouts': [110, 110, 110, 0]
+                'Payouts': [random.randint(100, 120), random.randint(100, 120), random.randint(100, 120), 0]
             },
             {
                 'Name': 'Co. 5',
@@ -114,7 +116,8 @@ def create_round(subsession):
                 'PriceBounds': (0, 10000),
                 'Exogeneous': False,
                 'MaxQtyBound': 10000,
-                'Payouts': [110, 110, 110, 110]
+                'Payouts': [random.randint(100, 120), random.randint(100, 120), random.randint(100, 120),
+                            random.randint(100, 120), ]
             },
         ]
         instruments = Security.GetSecurities(securities_params, trd_ses)
@@ -123,7 +126,7 @@ def create_round(subsession):
                 'Name': "1",
                 'PositionBounds': None,
                 'MinScoreLevel': 0,
-                'InitialPositions': [10000, 28, 11, 37, 4, 22],
+                'InitialPositions': [10000, 28, 11, 30, 12, 22],
                 'MaxScore': 10000,
                 'Params': {'a': 0.001, 'b': 0.0000025},
                 'MinQtyBound': [0, 0, 0, 0, 0, 0],
@@ -134,7 +137,7 @@ def create_round(subsession):
                 'Name': "2",
                 'PositionBounds': None,
                 'MinScoreLevel': 0,
-                'InitialPositions': [20000, 0, 0, 0, 0, 0],
+                'InitialPositions': [10000, 20, 20, 20, 20, 20],
                 'MaxScore': 10000,
                 'Params': {'a': 0.001, 'b': 0.0000025},
                 'MinQtyBound': [0, 0, 0, 0, 0, 0],
@@ -207,7 +210,8 @@ def custom_export(players):
         if tp not in pos_dict:
             pos_dict[tp] = {}
         instr_name[p.instr] = p.instr_name
-        pos_dict[tp][p.instr] = [p.sessioncode, p.trial, p.period, p.time, p.pl, p.start, p.instr, p.quantity]
+        pos_dict[tp][p.instr] = [p.sessioncode, p.trial, p.period, p.time, p.pl, p.is_insider, p.start, p.instr,
+                                 p.quantity]
         # yield pos_dict[tp][p.instr]
 
     # Export an ExtraModel called "Trial"
@@ -229,7 +233,8 @@ def custom_export(players):
 
     instrs = list(instr_name.keys())
     instrs.sort()
-    yield ['session.code', 'trial', 'period', 'time', 'trd', 'state'] + [instr_name.get(i, '') for i in instrs]
+    yield ['session.code', 'trial', 'period', 'time', 'trd', 'is_insider', 'state'] + [instr_name.get(i, '') for i in
+                                                                                       instrs]
     for k in pos_dict:
         yield pos_dict[k][0][:-2] + [pos_dict[k][i][-1] for i in instrs]
 
@@ -296,7 +301,8 @@ class Positions(ExtraModel):
     period = models.IntegerField()
     trial = models.IntegerField()
     start = models.IntegerField()
-    pl = models.IntegerField()
+    pl = models.StringField()
+    is_insider = models.BooleanField()
     group = models.Link(Group)
     instr = models.IntegerField()
     instr_name = models.StringField()
@@ -435,12 +441,13 @@ class Bid(Page):
         # без ранее сделанных изменений 
         res = market.GetAllTradersPos()
         for p in res:
+            print(f"ИНФО {p, market.trader_is_insider_dict[p]}")
             Positions.create(sessioncode=group.session.code, period=ts.CurrentPeriod, trial=group.round_number,
-                             start=sv_type, pl=p,
+                             start=sv_type, pl=p, is_insider=market.trader_is_insider_dict[p],
                              group=group, instr=-1, instr_name='rate', quantity=market.instrs[0].GetRate(), time=tm)
             for i, pos in enumerate(res[p]):
                 Positions.create(sessioncode=group.session.code, period=ts.CurrentPeriod, trial=group.round_number,
-                                 start=sv_type, pl=p,
+                                 start=sv_type, pl=p, is_insider=market.trader_is_insider_dict[p],
                                  group=group, instr=i, instr_name=market.instrs[i].Name, quantity=float(pos), time=tm)
             # pass
         if sv_type == 2:

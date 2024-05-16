@@ -19,6 +19,7 @@ class Market:
         self.Messages = []
         for i in instrs:
             i.makeInstrumsLinks(instrs)
+        self.trader_is_insider_dict = dict()
 
     # получить класс trader по его trader_id
     def GetTrader(self, trader_id) -> Trader:
@@ -31,6 +32,7 @@ class Market:
             i.NewTrial()
         for t in self.trds:
             is_insider = randint(0, 100) < self.ts.InsiderRatio[self.ts.CurrentTrial - 1]
+            self.trader_is_insider_dict[t.Type.Name] = is_insider
             t.NewTrial(is_insider=is_insider, bad_company=self.ts.BadCompany, cur_round_num=self.ts.CurrentTrial - 1)
         self.wasChanged = np.zeros((len(self.trds), len(self.instrs)), dtype=bool)
         self.ExogeneousInstrs = [i for i, instr in enumerate(self.instrs) if instr.Exogeneous]
@@ -278,7 +280,7 @@ class Market:
 
     # позиции всех трейдеров (в виде словаря)
     def GetAllTradersPos(self):
-        return {i + 1: trader.Position for i, trader in enumerate(self.trds)}
+        return {trader.Type.Name: trader.Position for i, trader in enumerate(self.trds)}
 
     # изенение денег вызванное инструментами
     def GetInstrumentsCashChange(self):
